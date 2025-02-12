@@ -23,7 +23,14 @@ def get_monthly_scores(daily_values_df):
     portfolios = [c for c in df.columns if c != 'YearMonth']
     monthly_scores_dict = {}  # key: YearMonth, value: dict of portfolio scores for that month
 
+    # Determine the current month period to skip incomplete month scoring
+    current_period = pd.Timestamp.now().to_period('M')
+
     for (ym), group in df.groupby('YearMonth'):
+        if ym == current_period:
+            # Skip calculating scores for the current month since it is not finished
+            continue
+
         start_values = df.iloc[0][portfolios]
         end_values = group.iloc[-1][portfolios]
         total_returns = (end_values / start_values) - 1.0
@@ -110,12 +117,12 @@ def analyze(cfg, price_data=None):
         portfolio_values[name] = vals
         rebalances_count[name] = rebs
 
-    results_df = pd.DataFrame(portfolio_values)
+    values_df = pd.DataFrame(portfolio_values)
 
     # Compute stats for each portfolio
     stats_rows = []
-    for name in results_df.columns:
-        series = results_df[name]
+    for name in values_df.columns:
+        series = values_df[name]
         final_val = series.dropna().iloc[-1]
         total_return = final_val / cfg['initial_capital'] - 1.0
 
@@ -133,7 +140,7 @@ def analyze(cfg, price_data=None):
     stats_df = pd.DataFrame(stats_rows)
 
     # Score portfolios: get monthly scores and sum to get total scores per portfolio
-    monthly_scores_df = get_monthly_scores(results_df)
+    monthly_scores_df = get_monthly_scores(values_df)
     total_scores = monthly_scores_df.sum(axis=0)
     stats_df['score'] = stats_df['portfolio'].map(total_scores)
 
@@ -142,7 +149,7 @@ def analyze(cfg, price_data=None):
     winner = stats_df.iloc[0]['portfolio']
 
     return {
-        'results_df': results_df,
+        'values_df': values_df,
         'stats_df': stats_df,
         'monthly_scores_df': monthly_scores_df,
         'winner': winner,

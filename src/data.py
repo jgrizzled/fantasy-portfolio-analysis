@@ -136,7 +136,7 @@ def get_price_data(tickers, start_date, end_date):
             for dt, price in ticker_series.items():
                 dt_int = int(dt.timestamp())
                 cur.execute(
-                    'INSERT INTO prices (ticker, date, close) VALUES (?, ?, ?)',
+                    'INSERT OR IGNORE INTO prices (ticker, date, close) VALUES (?, ?, ?)',
                     (ticker, dt_int, float(price)),
                 )
             conn.commit()

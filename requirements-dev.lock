@@ -48,7 +48,7 @@ idna==3.10
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
-    # via python-rye-template
+    # via fantasy-portfolio-analysis
 ipython==8.28.0
     # via ipykernel
 jedi==0.19.1
@@ -63,7 +63,7 @@ kiwisolver==1.4.8
 lxml==5.3.1
     # via yfinance
 matplotlib==3.10.0
-    # via python-rye-template
+    # via fantasy-portfolio-analysis
 matplotlib-inline==0.1.7
     # via ipykernel
     # via ipython
@@ -73,16 +73,16 @@ nest-asyncio==1.6.0
     # via ipykernel
 numpy==2.2.2
     # via contourpy
+    # via fantasy-portfolio-analysis
     # via matplotlib
     # via pandas
-    # via python-rye-template
     # via yfinance
 packaging==24.1
     # via ipykernel
     # via matplotlib
     # via pytest
 pandas==2.2.3
-    # via python-rye-template
+    # via fantasy-portfolio-analysis
     # via yfinance
 parso==0.8.4
     # via jedi
@@ -111,8 +111,6 @@ pygments==2.18.0
     # via ipython
 pyparsing==3.2.1
     # via matplotlib
-pyrate-limiter==3.7.0
-    # via python-rye-template
 pytest==8.3.4
 python-dateutil==2.9.0.post0
     # via jupyter-client
@@ -127,7 +125,7 @@ pyzmq==26.2.0
     # via ipykernel
     # via jupyter-client
 requests==2.32.3
-    # via python-rye-template
+    # via fantasy-portfolio-analysis
     # via yfinance
 six==1.16.0
     # via asttokens
@@ -158,4 +156,4 @@ wcwidth==0.2.13
 webencodings==0.5.1
     # via html5lib
 yfinance==0.2.52
-    # via python-rye-template
+    # via fantasy-portfolio-analysis
