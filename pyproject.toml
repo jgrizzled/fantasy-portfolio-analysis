@@ -1,0 +1,38 @@
+[project]
+name = "python-rye-template"
+version = "0.1.0"
+dependencies = [
+    "ipykernel>=6.29.5",
+    "pandas>=2.2.3",
+    "numpy>=2.2.2",
+    "yfinance>=0.2.52",
+    "matplotlib>=3.10.0",
+    "pyrate-limiter>=3.7.0",
+    "requests>=2.32.3",
+]
+requires-python = ">= 3.13"
+
+[project.scripts]
+example = "example_module.foo:foo"
+
+[tool.rye.scripts]
+lint = "rye check"
+format = "rye fmt --check"
+precommit = { chain = ["lint", "format"] }
+lint-fix = "rye check --fix"
+format-fix = "rye fmt"
+fix = { chain = ["lint-fix", "format-fix"] }
+test = "pytest src"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pytest>=8.3.4",
+]
+universal = true
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+
+[tool.ruff.format]
+quote-style = "single"

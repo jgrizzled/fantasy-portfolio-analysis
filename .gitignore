@@ -1,0 +1,26 @@
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.ruff_cache/
+.pytest_cache/
+*.pkl
+
+# venv
+.venv
+
+# Misc
+**.DS_Store
+
+# local notebooks, custom data, etc.
+/local/
+
+# env files
+.env
+.env.*
+
+*.sqlite
+*.csv
