@@ -8,7 +8,7 @@ import pandas as pd
 from data import get_price_data
 
 
-def get_monthly_scores(daily_values_df):
+def get_monthly_scores(daily_values_df: pd.DataFrame) -> pd.DataFrame:
     """
     daily_values_df: A DataFrame where each column is a portfolio's daily equity.
     Returns a DataFrame with monthly score totals per portfolio.
@@ -78,15 +78,18 @@ def analyze(cfg, price_data=None):
     """
     # Parse start/end dates
     start_date = datetime.strptime(cfg['start_date'], '%Y-%m-%d')
+    today = datetime.today()
     end_date = (
-        datetime.strptime(cfg['end_date'], '%Y-%m-%d')
-        if cfg['end_date']
-        else datetime.now()
+        datetime.strptime(cfg['end_date'], '%Y-%m-%d') if cfg['end_date'] else today
     )
+    if end_date > today:
+        end_date = today
     if not start_date:
         raise ValueError('Must provide a valid start_date.')
     if not end_date:
-        end_date = datetime.today()
+        end_date = today
+    if start_date >= end_date:
+        raise ValueError('start_date must be before end_date.')
 
     # Gather all tickers
     all_tickers = set()

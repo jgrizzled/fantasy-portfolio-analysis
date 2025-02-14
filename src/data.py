@@ -3,6 +3,7 @@ import yfinance as yf
 from requests.adapters import HTTPAdapter
 from requests import Session
 from requests.packages import urllib3
+from datetime import datetime
 import sqlite3
 
 urllib3.disable_warnings()
@@ -53,7 +54,9 @@ def initdb():
     return conn
 
 
-def get_price_data(tickers, start_date, end_date):
+def get_price_data(
+    tickers: list[str], start_date: datetime, end_date: datetime
+) -> pd.DataFrame:
     """
     Gets price data for the given tickers and date range,
     using a local SQLite price cache or yfinance.
@@ -71,13 +74,18 @@ def get_price_data(tickers, start_date, end_date):
     Returns:
         DataFrame: Processed daily price data with tickers as columns.
     """
-    # Initialize (or create) the sqlite cache database with migrations applied
-    conn = initdb()
-    cur = conn.cursor()
+    # Ensure end_date is not in the future, else set it to today's date
+    now = datetime.now()
+    if end_date > now:
+        end_date = now
 
     # Convert requested dates to integer timestamps (seconds since epoch)
     req_start_int = int(start_date.timestamp())
     req_end_int = int(end_date.timestamp())
+
+    # Initialize (or create) the sqlite cache database with migrations applied
+    conn = initdb()
+    cur = conn.cursor()
 
     cached_data = {}
     missing_tickers = []
@@ -92,7 +100,7 @@ def get_price_data(tickers, start_date, end_date):
         if row is not None:
             # Cached fetch exists, load the cached prices for this ticker
             cur.execute(
-                'SELECT date, close FROM prices WHERE ticker=? AND date BETWEEN ? AND ? ORDER BY date ASC',
+                'SELECT date, close FROM prices WHERE ticker=? AND date >= ? AND date < ? ORDER BY date ASC',
                 (ticker, req_start_int, req_end_int),
             )
             rows = cur.fetchall()

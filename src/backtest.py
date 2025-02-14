@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 
 
-def get_next_rebalance_date(current_date, frequency='none'):
+def get_next_rebalance_date(
+    current_date: datetime, frequency='none'
+) -> datetime | None:
     """
     If 'daily', return the next trading day.
     If 'weekly', rebalance on next Friday.
