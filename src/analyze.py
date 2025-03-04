@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils import (
     compute_max_drawdown,
     compute_sharpe_ratio,
@@ -26,9 +26,20 @@ def get_monthly_scores(daily_values_df: pd.DataFrame) -> pd.DataFrame:
     # Determine the current month period to skip incomplete month scoring
     current_period = pd.Timestamp.now().to_period('M')
 
+    # Get the first day of data to check for partial first month
+    first_day = df.index[0]
+    first_month = first_day.to_period('M')
+
     for (ym), group in df.groupby('YearMonth'):
+        # Skip current month and first month if it's partial
         if ym == current_period:
             # Skip calculating scores for the current month since it is not finished
+            continue
+
+        if (
+            ym == first_month and first_day.day > 5
+        ):  # If we start more than 5 days into the month, consider it partial
+            # Skip first month if it's partial (started after the 5th)
             continue
 
         start_values = df.iloc[0][portfolios]
@@ -79,11 +90,15 @@ def analyze(cfg, price_data=None):
     # Parse start/end dates
     start_date = datetime.strptime(cfg['start_date'], '%Y-%m-%d')
     today = datetime.today()
+    yesterday = today - timedelta(days=1)
+
+    # If end_date specified in config, use it, otherwise use yesterday
     end_date = (
-        datetime.strptime(cfg['end_date'], '%Y-%m-%d') if cfg['end_date'] else today
+        datetime.strptime(cfg['end_date'], '%Y-%m-%d') if cfg['end_date'] else yesterday
     )
-    if end_date > today:
-        end_date = today
+    # Ensure we don't use a future date or today
+    if end_date >= today:
+        end_date = yesterday
     if not start_date:
         raise ValueError('Must provide a valid start_date.')
     if not end_date:
@@ -147,13 +162,14 @@ def analyze(cfg, price_data=None):
     total_scores = monthly_scores_df.sum(axis=0)
     stats_df['score'] = stats_df['portfolio'].map(total_scores)
 
-    # Determine winner
+    # Determine winners
     stats_df = stats_df.sort_values(by=['score', 'rebalances'], ascending=[False, True])
-    winner = stats_df.iloc[0]['portfolio']
+    max_score = stats_df['score'].max()
+    winners = stats_df[stats_df['score'] == max_score]['portfolio'].tolist()
 
     return {
         'values_df': values_df,
         'stats_df': stats_df,
         'monthly_scores_df': monthly_scores_df,
-        'winner': winner,
+        'winners': winners,  # Now returns a list of all winning portfolios
     }

@@ -28,25 +28,23 @@ def _verify_backtest_results(
     drawdowns = portfolio_values / rolling_max - 1
     actual_maxdd = drawdowns.min()
 
-    assert rebalance_count == expected_rebalances, (
-        f"Number of rebalances {rebalance_count} doesn't match expected {expected_rebalances}"
-    )
+    assert (
+        rebalance_count == expected_rebalances
+    ), f"Number of rebalances {rebalance_count} doesn't match expected {expected_rebalances}"
 
     tolerance = 0.1
     assert (
         abs(actual_end_balance - expected_end_balance)
         < expected_end_balance * tolerance
-    ), (
-        f"End balance {actual_end_balance:.2f} doesn't match expected {expected_end_balance}"
-    )
+    ), f"End balance {actual_end_balance:.2f} doesn't match expected {expected_end_balance}"
 
-    assert abs(actual_maxdd - expected_maxdd) < tolerance, (
-        f"Maximum drawdown {actual_maxdd:.4f} doesn't match expected {expected_maxdd}"
-    )
+    assert (
+        abs(actual_maxdd - expected_maxdd) < tolerance
+    ), f"Maximum drawdown {actual_maxdd:.4f} doesn't match expected {expected_maxdd}"
 
-    assert abs(actual_total_return - expected_total_return) < tolerance, (
-        f"Total return {actual_total_return:.4f} doesn't match expected {expected_total_return}"
-    )
+    assert (
+        abs(actual_total_return - expected_total_return) < tolerance
+    ), f"Total return {actual_total_return:.4f} doesn't match expected {expected_total_return}"
 
 
 def test_simple():

@@ -3,12 +3,14 @@ import yfinance as yf
 from requests.adapters import HTTPAdapter
 from requests import Session
 from requests.packages import urllib3
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
+from zoneinfo import ZoneInfo
 
 urllib3.disable_warnings()
 
 PRICE_CACHE_FILE = 'price_cache.sqlite'
+NY_TZ = ZoneInfo('America/New_York')
 
 
 def initdb():
@@ -74,14 +76,23 @@ def get_price_data(
     Returns:
         DataFrame: Processed daily price data with tickers as columns.
     """
-    # Ensure end_date is not in the future, else set it to today's date
+    # Ensure end_date is not in the future or today, else set it to yesterday
     now = datetime.now()
-    if end_date > now:
-        end_date = now
+    yesterday = datetime(now.year, now.month, now.day) - pd.Timedelta(days=1)
+    if end_date >= yesterday:
+        end_date = yesterday
 
     # Convert requested dates to integer timestamps (seconds since epoch)
-    req_start_int = int(start_date.timestamp())
-    req_end_int = int(end_date.timestamp())
+    # Adjust start date to previous day to ensure we catch NY market open
+    start_date_ny = start_date.astimezone(NY_TZ)
+    start_date_ny = start_date_ny.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_date_ny = start_date_ny - timedelta(days=1)
+
+    end_date_ny = end_date.astimezone(NY_TZ)
+    end_date_ny = end_date_ny.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    req_start_int = int(start_date_ny.timestamp())
+    req_end_int = int(end_date_ny.timestamp())
 
     # Initialize (or create) the sqlite cache database with migrations applied
     conn = initdb()
@@ -125,6 +136,7 @@ def get_price_data(
             timeout=30,
             session=session,
             threads=False,
+            auto_adjust=True,
         )
         data = fetched['Close']
         # If only one ticker was requested, ensure it is a DataFrame
@@ -142,7 +154,8 @@ def get_price_data(
             )
             # Insert each price point into the prices table
             for dt, price in ticker_series.items():
-                dt_int = int(dt.timestamp())
+                dt_ny = dt.tz_localize('UTC').astimezone(NY_TZ)
+                dt_int = int(dt_ny.timestamp())
                 cur.execute(
                     'INSERT OR IGNORE INTO prices (ticker, date, close) VALUES (?, ?, ?)',
                     (ticker, dt_int, float(price)),

@@ -40,8 +40,6 @@ fonttools==4.56.0
     # via matplotlib
 frozendict==2.4.6
     # via yfinance
-html5lib==1.1
-    # via yfinance
 idna==3.10
     # via requests
 ipykernel==6.29.5
@@ -57,8 +55,6 @@ jupyter-core==5.7.2
     # via jupyter-client
 kiwisolver==1.4.8
     # via matplotlib
-lxml==5.3.1
-    # via yfinance
 matplotlib==3.10.0
     # via fantasy-portfolio-analysis
 matplotlib-inline==0.1.7
@@ -122,7 +118,6 @@ requests==2.32.3
     # via yfinance
 six==1.16.0
     # via asttokens
-    # via html5lib
     # via python-dateutil
 soupsieve==2.6
     # via beautifulsoup4
@@ -146,7 +141,5 @@ urllib3==2.3.0
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webencodings==0.5.1
-    # via html5lib
-yfinance==0.2.52
+yfinance==0.2.54
     # via fantasy-portfolio-analysis
