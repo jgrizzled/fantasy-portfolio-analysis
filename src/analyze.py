@@ -13,9 +13,10 @@ def get_monthly_scores(daily_values_df: pd.DataFrame) -> pd.DataFrame:
     daily_values_df: A DataFrame where each column is a portfolio's daily equity.
     Returns a DataFrame with monthly score totals per portfolio.
     Scoring per month:
-      - The portfolio with the highest total return (since start) gets +1
-      - The portfolio with the lowest max drawdown (since start) gets +1
-    Ties get +1 points for all portfolios that tie.
+      - Portfolios are ranked by total return (since start)
+      - Portfolios are ranked by max drawdown (since start)
+    The final score for each portfolio is the sum of its ranks in both categories.
+    Higher ranks indicate better performance.
     """
     df = daily_values_df.copy()
     df['YearMonth'] = df.index.to_period('M')
@@ -33,13 +34,9 @@ def get_monthly_scores(daily_values_df: pd.DataFrame) -> pd.DataFrame:
     for (ym), group in df.groupby('YearMonth'):
         # Skip current month and first month if it's partial
         if ym == current_period:
-            # Skip calculating scores for the current month since it is not finished
             continue
 
-        if (
-            ym == first_month and first_day.day > 5
-        ):  # If we start more than 5 days into the month, consider it partial
-            # Skip first month if it's partial (started after the 5th)
+        if ym == first_month and first_day.day > 5:
             continue
 
         start_values = df.iloc[0][portfolios]
@@ -55,22 +52,13 @@ def get_monthly_scores(daily_values_df: pd.DataFrame) -> pd.DataFrame:
             dd = compute_max_drawdown(curve)
             period_drawdowns[p] = dd
 
-        # highest total return => we want the portfolio(s) with the largest value
-        max_return = total_returns.max()
-        winners_return = total_returns[total_returns == max_return].index
-
-        # lowest overall max drawdown => means the max drawdown is the least negative
+        # Convert to series for easier ranking
         dd_series = pd.Series(period_drawdowns)
-        best_dd_val = dd_series.max()  # the "least negative" is the max
-        winners_dd = dd_series[dd_series == best_dd_val].index
+        return_ranks = total_returns.rank(ascending=True)
+        dd_ranks = dd_series.rank(ascending=True)
 
-        # Build a score for this month (defaulting to zero for every portfolio)
-        month_score = {p: 0 for p in portfolios}
-        for w in winners_return:
-            month_score[w] += 1
-        for w in winners_dd:
-            month_score[w] += 1
-
+        # Sum the ranks for total score
+        month_score = {p: return_ranks[p] + dd_ranks[p] for p in portfolios}
         monthly_scores_dict[ym] = month_score
 
     # Create a DataFrame where index is YearMonth and columns are portfolios
