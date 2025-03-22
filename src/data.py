@@ -10,7 +10,6 @@ from zoneinfo import ZoneInfo
 urllib3.disable_warnings()
 
 PRICE_CACHE_FILE = 'price_cache.sqlite'
-NY_TZ = ZoneInfo('America/New_York')
 
 
 def initdb():
@@ -71,28 +70,14 @@ def get_price_data(
     Args:
         tickers (list): List of ticker symbols
         start_date (datetime): Start date for data download
-        end_date (datetime): End date for data download
+        end_date (datetime): End date for data download (inclusive)
 
     Returns:
         DataFrame: Processed daily price data with tickers as columns.
     """
-    # Ensure end_date is not in the future or today, else set it to yesterday
-    now = datetime.now()
-    yesterday = datetime(now.year, now.month, now.day) - pd.Timedelta(days=1)
-    if end_date >= yesterday:
-        end_date = yesterday
 
-    # Convert requested dates to integer timestamps (seconds since epoch)
-    # Adjust start date to previous day to ensure we catch NY market open
-    start_date_ny = start_date.astimezone(NY_TZ)
-    start_date_ny = start_date_ny.replace(hour=0, minute=0, second=0, microsecond=0)
-    start_date_ny = start_date_ny - timedelta(days=1)
-
-    end_date_ny = end_date.astimezone(NY_TZ)
-    end_date_ny = end_date_ny.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    req_start_int = int(start_date_ny.timestamp())
-    req_end_int = int(end_date_ny.timestamp())
+    req_start_int = int(start_date.timestamp())
+    req_end_int = int(end_date.timestamp())
 
     # Initialize (or create) the sqlite cache database with migrations applied
     conn = initdb()
@@ -111,7 +96,7 @@ def get_price_data(
         if row is not None:
             # Cached fetch exists, load the cached prices for this ticker
             cur.execute(
-                'SELECT date, close FROM prices WHERE ticker=? AND date >= ? AND date < ? ORDER BY date ASC',
+                'SELECT date, close FROM prices WHERE ticker=? AND date >= ? AND date <= ? ORDER BY date ASC',
                 (ticker, req_start_int, req_end_int),
             )
             rows = cur.fetchall()
@@ -131,7 +116,7 @@ def get_price_data(
         fetched = yf.download(
             missing_tickers if len(missing_tickers) > 1 else missing_tickers[0],
             start=start_date,
-            end=end_date,
+            end=end_date + timedelta(seconds=1),  # to include end_date
             progress=False,
             timeout=30,
             session=session,
@@ -154,7 +139,7 @@ def get_price_data(
             )
             # Insert each price point into the prices table
             for dt, price in ticker_series.items():
-                dt_ny = dt.tz_localize('UTC').astimezone(NY_TZ)
+                dt_ny = dt.replace(tzinfo=ZoneInfo('America/New_York'), hour=16)
                 dt_int = int(dt_ny.timestamp())
                 cur.execute(
                     'INSERT OR IGNORE INTO prices (ticker, date, close) VALUES (?, ?, ?)',

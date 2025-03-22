@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import pytz
+from zoneinfo import ZoneInfo
 from utils import (
     compute_max_drawdown,
     compute_sharpe_ratio,
@@ -76,21 +78,35 @@ def analyze(cfg, price_data=None):
         price_data (DataFrame, optional): Pre-downloaded price data. If None, will download.
     """
     # Parse start/end dates
-    start_date = datetime.strptime(cfg['start_date'], '%Y-%m-%d')
-    today = datetime.today()
-    yesterday = today - timedelta(days=1)
-
-    # If end_date specified in config, use it, otherwise use yesterday
-    end_date = (
-        datetime.strptime(cfg['end_date'], '%Y-%m-%d') if cfg['end_date'] else yesterday
+    start_date = datetime.strptime(cfg['start_date'], '%Y-%m-%d').replace(
+        tzinfo=ZoneInfo('America/New_York'), hour=16, minute=0, second=0, microsecond=0
     )
-    # Ensure we don't use a future date or today
-    if end_date >= today:
-        end_date = yesterday
+
+    # Set time to market close in NY (4:00 PM ET)
+    ny_tz = pytz.timezone('America/New_York')
+    current_time = datetime.now(ny_tz)
+    today = current_time.replace(hour=16, minute=0, second=0, microsecond=0)
+
+    # Determine latest market close based on current NY time
+    if current_time.hour < 16:  # Before 4pm NY time
+        latest_market_close = today - timedelta(days=1)
+    else:  # 4pm or later NY time
+        latest_market_close = today
+
+    # If end_date specified in config, use it, otherwise use latest market close
+    if cfg['end_date']:
+        end_date = datetime.strptime(cfg['end_date'], '%Y-%m-%d').replace(
+            tzinfo=ZoneInfo('America/New_York'),
+            hour=16,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+    else:
+        end_date = latest_market_close
+
     if not start_date:
         raise ValueError('Must provide a valid start_date.')
-    if not end_date:
-        end_date = today
     if start_date >= end_date:
         raise ValueError('start_date must be before end_date.')
 
