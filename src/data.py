@@ -1,13 +1,8 @@
 import pandas as pd
 import yfinance as yf
-from requests.adapters import HTTPAdapter
-from requests import Session
-from requests.packages import urllib3
 from datetime import datetime, timedelta
 import sqlite3
 from zoneinfo import ZoneInfo
-
-urllib3.disable_warnings()
 
 PRICE_CACHE_FILE = 'price_cache.sqlite'
 
@@ -111,15 +106,12 @@ def get_price_data(
 
     # For tickers not fully cached, download from yfinance
     if missing_tickers:
-        session = Session()
-        session.mount('https://', HTTPAdapter(max_retries=3))
         fetched = yf.download(
             missing_tickers if len(missing_tickers) > 1 else missing_tickers[0],
             start=start_date,
             end=end_date + timedelta(seconds=1),  # to include end_date
             progress=False,
             timeout=30,
-            session=session,
             threads=False,
             auto_adjust=True,
         )
